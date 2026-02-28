@@ -1,0 +1,4 @@
+.env
+*.pyc
+__pycache__/
+# add any other sensitive or environment-specific files here

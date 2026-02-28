@@ -1,0 +1,254 @@
+=====================================
+   🔥 ROUND 1: RED TEAM ATTACK 🔥   
+=====================================
+
+[TARGET CODE]
+def authenticate_user(username, password):
+    query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+    execute_db_query(query)
+    return True
+
+def execute_db_query(query):
+    pass
+
+[RED TEAM - PROBE GENERATOR] Created Payloads:
+["' OR 1=1 --", "' OR '1'='1' #", "'; DROP TABLE users; --"]
+
+[RED TEAM - EXPLOIT AGENT] Execution Result:
+All provided payloads demonstrate SQL injection vulnerabilities.
+
+Let's simulate each one:
+
+**1. Payload: `"' OR 1=1 --"`**
+
+*   **Input:** `username = "' OR 1=1 --"`, `password = "any_password"` (the actual password doesn't matter for this payload).
+*   **Constructed Query:**
+    ```sql
+    SELECT * FROM users WHERE username = ''' OR 1=1 --' AND password = 'any_password'
+    ```
+*   **Execution:**
+    The database will interpret this as:
+    ```sql
+    SELECT * FROM users WHERE username = '' OR 1=1 -- AND password = 'any_password'
+    ```
+    *   `username = ''` closes the string literal.
+    *   `OR 1=1` adds a condition that is always true.
+    *   `--` is a SQL comment, which ignores the rest of the line, including `AND password = 'any_password'`.
+    *   The `WHERE` clause effectively becomes `username = '' OR TRUE`, which is always `TRUE`.
+    *   This query will return all users (or at least the first user if the application only processes the first result), effectively logging in the attacker without needing a valid username or password.
+
+*   **Result:** `EXPLOITED: ' OR 1=1 --`
+
+**2. Payload: `"' OR '1'='1' #"`**
+
+*   **Input:** `username = "' OR '1'='1' #"` , `password = "any_password"`
+*   **Constructed Query:**
+    ```sql
+    SELECT * FROM users WHERE username = ''' OR ''1''='1'' #' AND password = 'any_password'
+    ```
+*   **Execution:**
+    The database will interpret this as:
+    ```sql
+    SELECT * FROM users WHERE username = '' OR '1'='1' # AND password = 'any_password'
+    ```
+    *   `username = ''` closes the string literal.
+    *   `OR '1'='1'` adds a condition that is always true.
+    *   `#` is a SQL comment (common in MySQL and SQLite), which ignores the rest of the line, including `AND password = 'any_password'`.
+    *   The `WHERE` clause effectively becomes `username = '' OR TRUE`, which is always `TRUE`.
+    *   This query will return all users, granting unauthorized access.
+
+*   **Result:** `EXPLOITED: ' OR '1'='1' #`
+
+**3. Payload: `"; DROP TABLE users; --"`**
+
+*   **Input:** `username = "'; DROP TABLE users; --"`, `password = "any_password"`
+*   **Constructed Query:**
+    ```sql
+    SELECT * FROM users WHERE username = ''; DROP TABLE users; --' AND password = 'any_password'
+    ```
+*   **Execution:**
+    The database will interpret this as multiple statements (if the database driver allows it, which is common in vulnerable setups):
+    ```sql
+    SELECT * FROM users WHERE username = '';
+    DROP TABLE users;
+    --' AND password = 'any_password' (this part is commented out)
+    ```
+    *   `username = ''` closes the string literal for the `username`.
+    *   `;` terminates the first `SELECT` statement.
+    *   `DROP TABLE users;` is then executed as a new, separate command, deleting the `users` table.
+    *   `--` comments out the remainder of the original query.
+    *   This payload would lead to data loss and a broken application.
+
+*   **Result:** `EXPLOITED: '; DROP TABLE users; --`
+
+[RED TEAM - REPORT GENERATOR] Final Verdict:
+VULNERABILITY DETECTED
+Details: All provided payloads demonstrate SQL injection vulnerabilities.
+
+Let's simulate each one:
+
+**1. Payload: `"' OR 1=1 --"`**
+
+*   **Input:** `username = "' OR 1=1 --"`, `password = "any_password"` (the actual password doesn't matter for this payload).
+*   **Constructed Query:**
+    ```sql
+    SELECT * FROM users WHERE username = ''' OR 1=1 --' AND password = 'any_password'
+    ```
+*   **Execution:**
+    The database will interpret this as:
+    ```sql
+    SELECT * FROM users WHERE username = '' OR 1=1 -- AND password = 'any_password'
+    ```
+    *   `username = ''` closes the string literal.
+    *   `OR 1=1` adds a condition that is always true.
+    *   `--` is a SQL comment, which ignores the rest of the line, including `AND password = 'any_password'`.
+    *   The `WHERE` clause effectively becomes `username = '' OR TRUE`, which is always `TRUE`.
+    *   This query will return all users (or at least the first user if the application only processes the first result), effectively logging in the attacker without needing a valid username or password.
+
+*   **Result:** `EXPLOITED: ' OR 1=1 --`
+
+**2. Payload: `"' OR '1'='1' #"`**
+
+*   **Input:** `username = "' OR '1'='1' #"` , `password = "any_password"`
+*   **Constructed Query:**
+    ```sql
+    SELECT * FROM users WHERE username = ''' OR ''1''='1'' #' AND password = 'any_password'
+    ```
+*   **Execution:**
+    The database will interpret this as:
+    ```sql
+    SELECT * FROM users WHERE username = '' OR '1'='1' # AND password = 'any_password'
+    ```
+    *   `username = ''` closes the string literal.
+    *   `OR '1'='1'` adds a condition that is always true.
+    *   `#` is a SQL comment (common in MySQL and SQLite), which ignores the rest of the line, including `AND password = 'any_password'`.
+    *   The `WHERE` clause effectively becomes `username = '' OR TRUE`, which is always `TRUE`.
+    *   This query will return all users, granting unauthorized access.
+
+*   **Result:** `EXPLOITED: ' OR '1'='1' #`
+
+**3. Payload: `"; DROP TABLE users; --"`**
+
+*   **Input:** `username = "'; DROP TABLE users; --"`, `password = "any_password"`
+*   **Constructed Query:**
+    ```sql
+    SELECT * FROM users WHERE username = ''; DROP TABLE users; --' AND password = 'any_password'
+    ```
+*   **Execution:**
+    The database will interpret this as multiple statements (if the database driver allows it, which is common in vulnerable setups):
+    ```sql
+    SELECT * FROM users WHERE username = '';
+    DROP TABLE users;
+    --' AND password = 'any_password' (this part is commented out)
+    ```
+    *   `username = ''` closes the string literal for the `username`.
+    *   `;` terminates the first `SELECT` statement.
+    *   `DROP TABLE users;` is then executed as a new, separate command, deleting the `users` table.
+    *   `--` comments out the remainder of the original query.
+    *   This payload would lead to data loss and a broken application.
+
+*   **Result:** `EXPLOITED: '; DROP TABLE users; --`
+
+=====================================
+  🛡️ ROUND 2: BLUE TEAM DEFENSE 🛡️  
+=====================================
+
+[BLUE TEAM - PATCH GENERATOR] Proposed Fix:
+import sqlite3
+
+# --- Database setup and query execution ---
+
+def get_db_connection():
+    """
+    Establishes an in-memory SQLite connection for demonstration purposes.
+    Initializes the 'users' table and adds a sample user if they don't exist.
+    In a real application, you would connect to a persistent database (e.g., PostgreSQL, MySQL).
+    """
+    conn = sqlite3.connect(':memory:')
+    conn.execute('PRAGMA foreign_keys = ON;') # Optional: Enable foreign keys
+
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        );
+    ''')
+
+    # Add a sample user for testing authentication
+    try:
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", ('validuser', 'securepassword123'))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        # 'validuser' already exists, which is expected on subsequent calls to get_db_connection
+        pass
+
+    return conn
+
+def execute_db_query(query: str, params: tuple = None):
+    """
+    Executes a database query using parameterized queries to prevent SQL injection.
+    Manages connection lifecycle: opens, executes, fetches/commits, and closes.
+    Returns fetched rows for SELECT queries, or rowcount for DML statements.
+    Raises sqlite3.Error on database errors.
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+
+        # Determine if it's a SELECT query to fetch results
+        if query.strip().upper().startswith('SELECT'):
+            return cursor.fetchall()
+        else:
+            conn.commit()
+            return cursor.rowcount # For INSERT, UPDATE, DELETE
+
+    except sqlite3.Error as e:
+        # In a real application, you would log the specific error details here.
+        if conn:
+            conn.rollback() # Ensure transaction is rolled back on error
+        raise # Re-raise the exception after logging for upstream handling
+    finally:
+        if conn:
+            conn.close()
+
+# --- Authenticate User function (fixed with parameterized queries) ---
+
+def authenticate_user(username: str, password: str) -> bool:
+    """
+    Authenticates a user by checking their username and password against the database.
+    Uses parameterized queries to prevent SQL injection vulnerabilities.
+    Returns True on successful authentication, False otherwise.
+    """
+    # Use '?' as a placeholder for parameters (standard for sqlite3).
+    # For other database APIs, this might be '%s' (e.g., psycopg2, MySQLdb)
+    # or ':param_name' (e.g., cx_Oracle).
+    query = "SELECT id FROM users WHERE username = ? AND password = ?"
+
+    try:
+        # Pass the username and password as a tuple of parameters to the execute_db_query function.
+        # The database driver will handle proper escaping of these values,
+        # treating them as literal strings rather than executable SQL code,
+        # thus preventing SQL injection.
+        results = execute_db_query(query, (username, password))
+
+        # If the results list is not empty, it means a matching user was found.
+        # The boolean conversion handles both empty list (False) and non-empty list (True).
+        return bool(results)
+
+    except Exception:
+        # Catch any broader exceptions during database interaction (e.g., connection issues,
+        # unexpected query errors from execute_db_query).
+        # In a real application, you would log the exception details for debugging.
+        return False
+
+[BLUE TEAM - VERIFICATION AGENT] Status: VERIFIED
+
+[SYSTEM] Vulnerability neutralized. Target code successfully overwritten.
